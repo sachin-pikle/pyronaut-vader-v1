@@ -6,11 +6,17 @@ The app runs locally. The browser reads the selected file and sends its text to 
 
 ## Requirements
 
-- Python 3.10 or later for the Pyronaut CLI
-- Pyronaut CLI 0.1.1
-- A compatible GraalVM JDK and GraalPy, provisioned by `pyronaut setup`
+The Pyronaut CLI requires Python 3.10 or later. `pyronaut setup` provisions the compatible GraalVM JDK and GraalPy used by the project.
 
-The demo was prepared with GraalPy 25.4.4.1.1 and `vaderSentiment` 3.3.2. Check the [Pyronaut documentation](https://pyronaut.io/docs/) for current installation requirements.
+Versions used for this demo:
+
+| Component | Version |
+| --- | --- |
+| Pyronaut CLI | 0.1.1 |
+| GraalPy | 25.4.4.1.1 |
+| `vaderSentiment` | 3.3.2 |
+
+Check the [Pyronaut documentation](https://pyronaut.io/docs/) for current installation requirements.
 
 ## Install the CLI
 
