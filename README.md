@@ -62,6 +62,8 @@ Blank review text returns `400 Bad Request`.
 
 ## Package
 
+### `fat-jar`
+
 Build and run an executable JAR with a compatible GraalVM JDK:
 
 ```bash
@@ -69,21 +71,65 @@ pyronaut build --jar
 java -jar dist/pyronaut-vader-1.0.0.jar
 ```
 
-Build a native executable with:
+### `wheel-native`
+
+Build and run a native executable:
 
 ```bash
 pyronaut build --native
 ./pyronaut/native/application
 ```
 
-Pyronaut also supports these formats:
+### `wheel-jvm`
 
-| Format | Command | Description |
-| --- | --- | --- |
-| `wheel-jvm` | `pyronaut build --jvm` | Python wheel for the JVM; default for Python projects |
-| `docker-jvm` | `pyronaut build --jvm --docker` | Container image using the JVM runtime |
-| `docker-native` | `pyronaut build --native --docker` | Linux container with a native executable |
-| `wheel-crema` | `pyronaut build --native-base` | Python wheel using the reusable Crema runtime |
-| `docker-crema` | `pyronaut build --native-base --docker` | Container using the reusable Crema runtime |
+Build the wheel. Pyronaut prints the commands to install and run it:
 
-Native builds take longer and require the application's dependencies to support GraalVM Native Image. See the [Pyronaut packaging documentation](https://pyronaut.io/docs/) for details.
+```bash
+pyronaut build --jvm
+```
+
+Use the printed `Install with:` and `Run it with:` commands in the GraalPy deployment environment. A compatible GraalVM JDK is required.
+
+### `docker-jvm`
+
+Set the image name in `pyproject.toml`, then build and run the image:
+
+```toml
+[tool.pyronaut.build.docker]
+image-name = "pyronaut-vader"
+```
+
+```bash
+pyronaut build --jvm --docker
+docker run --rm -p 8080:8080 pyronaut-vader:1.0.0
+```
+
+### `docker-native`
+
+Build and run the native image:
+
+```bash
+pyronaut build --native --docker
+docker run --rm -p 8080:8080 pyronaut-vader:1.0.0-native
+```
+
+### `wheel-crema`
+
+Build the wheel. Pyronaut prints the commands to install and run it:
+
+```bash
+pyronaut build --native-base
+```
+
+Use the printed `Install with:` and `Run it with:` commands in the deployment environment.
+
+### `docker-crema`
+
+Build and run the Crema image:
+
+```bash
+pyronaut build --native-base --docker
+docker run --rm -p 8080:8080 pyronaut-vader:1.0.0-native
+```
+
+Wheel builds create a distributable Python wheel in `dist/`. Container builds require Docker. Native and Crema builds take longer than JVM builds; native builds also require application dependencies to support GraalVM Native Image. See the [Pyronaut packaging documentation](https://pyronaut.io/docs/) for deployment details.
