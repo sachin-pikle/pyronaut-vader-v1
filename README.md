@@ -89,10 +89,20 @@ VIRTUAL_ENV="$PWD/.venv" java -jar dist/pyronaut-vader-1.0.0.jar
 
 ##### `wheel-crema`
 
-Build the wheel, then use the install and run commands printed by Pyronaut. Prefix its printed run command with `VIRTUAL_ENV="$PWD/.venv"`.
+Build the wheel, then run the staged binary:
+
+The build stages the binary at `__pyronaut__/native/pyronaut-vader`.
 
 ```bash
 pyronaut build --native-base
+VIRTUAL_ENV="$PWD/.venv" ./__pyronaut__/native/pyronaut-vader
+```
+
+The wheel is written to `dist/`. To test the installed wheel instead, use the optional commands below; you can keep the wheel installed afterwards.
+
+```bash
+python -m pip install dist/*.whl
+VIRTUAL_ENV="$PWD/.venv" pyronaut-vader
 ```
 
 ##### `wheel-native`
@@ -118,10 +128,20 @@ java -jar dist/pyronaut-vader-1.0.0.jar
 
 ##### `wheel-crema`
 
-Build the wheel with the CLI, then use Pyronaut's printed install and run commands. The project `.venv` is active for the run command.
+Build the wheel, then run the staged binary:
+
+The build stages the binary at `__pyronaut__/native/pyronaut-vader`.
 
 ```bash
 ~/.venvs/pyronaut-cli/bin/pyronaut build --native-base
+./__pyronaut__/native/pyronaut-vader
+```
+
+The wheel is written to `dist/`. To test the installed wheel instead, install and run its command:
+
+```bash
+python -m pip install dist/*.whl
+pyronaut-vader
 ```
 
 ##### `wheel-native`
