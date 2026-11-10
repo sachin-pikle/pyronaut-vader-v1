@@ -9,7 +9,7 @@ Uses Pyronaut CLI 0.1.1, GraalVM 25.4.4.1.1 (based on JDK 25.0.4.1), GraalPy 25.
 ```text
 Browser reads review file
   → sends review text as JSON
-  → Micronaut HTTP server (Netty)
+  → Micronaut HTTP server running on Netty
   → Python controller
   → Python sentiment service
   → VADER
