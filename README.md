@@ -72,6 +72,8 @@ curl -i -X POST http://localhost:8080/api/reviews/analyze \
 
 In the Pyronaut 0.1.1 artifacts tested here, the Python application code is packaged inside the JAR, native executable, and Crema wheel in GraalPy's virtual filesystem. However, the `vaderSentiment` library is not packaged in those artifacts; GraalPy loads it from the project's `.venv` on disk. When you launch an artifact, `VIRTUAL_ENV` must point to this project's `.venv`. If it is unset or points elsewhere, the server starts, but the requests to `/api/reviews/analyze` fail with `ModuleNotFoundError: No module named 'vaderSentiment'`.
 
+Track this packaging question in [Pyronaut issue #430](https://github.com/micronaut-projects/pyronaut/issues/430).
+
 ### Tested formats
 
 #### Path 1: Keep the CLI environment active
@@ -112,6 +114,8 @@ pyronaut build --native
 VIRTUAL_ENV="$PWD/.venv" ./__pyronaut__/native/pyronaut-vader
 ```
 
+The build completed in 16 minutes 38 seconds. The native image build took 16 minutes 14 seconds and produced a 600.7 MB executable. Native-image reported 24 GiB of build memory (75% of the system's 32 GiB) and 10 threads (all 10 available processors).
+
 #### Path 2: Switch to the project environment
 
 ```bash
@@ -151,7 +155,7 @@ pyronaut-vader
 ./__pyronaut__/native/pyronaut-vader
 ```
 
-The native build took 13 minutes and 13 seconds on this machine. Pyronaut staged the executable at `__pyronaut__/native/pyronaut-vader` and created the wheel `dist/pyronaut_vader-1.0.0-graalpy313-graalpy253_313_native-macosx_26_0_arm64.whl`.
+The native build took 13 minutes and 13 seconds. Native-image reported 24 GiB of build memory (75% of the system's 32 GiB) and 10 threads (all 10 available processors). Pyronaut staged the executable at `__pyronaut__/native/pyronaut-vader` and created the wheel `dist/pyronaut_vader-1.0.0-graalpy313-graalpy253_313_native-macosx_26_0_arm64.whl`.
 
 ### Not tested
 
