@@ -76,4 +76,14 @@ pyronaut build --native
 ./pyronaut/native/application
 ```
 
+Pyronaut also supports these formats:
+
+| Format | Command | Description |
+| --- | --- | --- |
+| `wheel-jvm` | `pyronaut build --jvm` | Python wheel for the JVM; default for Python projects |
+| `docker-jvm` | `pyronaut build --jvm --docker` | Container image using the JVM runtime |
+| `docker-native` | `pyronaut build --native --docker` | Linux container with a native executable |
+| `wheel-crema` | `pyronaut build --native-base` | Python wheel using the reusable Crema runtime |
+| `docker-crema` | `pyronaut build --native-base --docker` | Container using the reusable Crema runtime |
+
 Native builds take longer and require the application's dependencies to support GraalVM Native Image. See the [Pyronaut packaging documentation](https://pyronaut.io/docs/) for details.
