@@ -9,7 +9,7 @@ Uses Pyronaut CLI 0.1.1, GraalVM 25.4.4.1.1 (based on JDK 25.0.4.1), GraalPy 25.
 ```text
 Browser reads review file
   → sends review text as JSON
-  → Micronaut HTTP server
+  → Micronaut HTTP server (Netty)
   → Python controller
   → Python sentiment service
   → VADER
@@ -17,6 +17,8 @@ Browser reads review file
 ```
 
 The analysis runs locally. The demo does not send review text to a hosted AI service.
+
+This project declares Micronaut's Netty server module. Netty handles the HTTP connections; Micronaut provides routing and dispatches the request to the Python controller.
 
 ## Run
 
