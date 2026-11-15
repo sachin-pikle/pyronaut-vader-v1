@@ -2,7 +2,18 @@
 
 A small Pyronaut application that analyzes product reviews with VADER. The browser page lets you select a review file and see the result.
 
-Uses Pyronaut CLI 0.1.1, GraalVM 25.4.4.1.1 (based on JDK 25.0.4.1), GraalPy 25.4.4.1.1, and `vaderSentiment` 3.3.2. The GraalVM JDK was selected with SDKMAN identifier `25.4.4+1-graal`. The project does not pin a JDK version; `pyronaut setup` locates or provisions a compatible one.
+## Versions
+
+- Pyronaut CLI: 0.1.2
+- Micronaut Core: 5.2.22
+- Micronaut Platform: 5.2.5
+- GraalVM: 25.4.4.1.1 (JDK 25.0.4.1)
+- GraalPy: 25.4.4.1.1
+- GraalPy interpreter: `graalpy3.13-25.4.4`
+- Native Image JDK: 25
+- `vaderSentiment`: 3.3.2
+
+The GraalVM JDK was selected with SDKMAN identifier `25.4.4+1-graal`. The project does not pin a JDK version; `pyronaut setup` locates or provisions a compatible one.
 
 ## Flow
 
@@ -29,11 +40,17 @@ sdk use java 25.4.4+1-graal
 python3 -m venv ~/.venvs/pyronaut-cli
 source ~/.venvs/pyronaut-cli/bin/activate
 python3 -m pip install --upgrade pip
-python3 -m pip install --upgrade 'pyronaut==0.1.1'
+python3 -m pip install --upgrade 'pyronaut==0.1.2'
+```
+
+```bash
+sdk use java 25.4.4+1-graal
 pyronaut setup --refresh
 ```
 
-The activated `pyronaut-cli` environment is for the CLI. From the project directory, run `pyronaut install`; it creates the project's `.venv` with GraalPy and installs `vaderSentiment`. You don't need to activate the project environment for `pyronaut run`, `dev`, or `test`; they use it automatically.
+`pyronaut setup` prepares the shared GraalVM/GraalPy SDKs and CLI build tools.
+
+From the project directory, `pyronaut install` creates the project's GraalPy `.venv`, installs Python dependencies, resolves build, runtime, development-runtime, and test dependencies, and generates the application schema and Python editor stubs. `pyronaut run`, `dev`, and `test` use that environment automatically.
 
 Install dependencies, run the tests, and start the development server:
 
@@ -73,13 +90,9 @@ curl -i -X POST http://localhost:8080/api/reviews/analyze \
 
 Pyronaut generates the OpenAPI description during processing. `pyronaut dev` runs processing before starting the app. While it is running, open [Swagger UI](http://localhost:8080/swagger-ui/index.html) or [ReDoc](http://localhost:8080/redoc/index.html) to explore and call the endpoint.
 
-This application maps the generated OpenAPI specification, Swagger UI, and ReDoc explicitly in `config/application.toml`. This is a temporary workaround because the development server's default documentation routes return `404` alongside the application's `/**` static-resource mapping.
+This application maps the generated OpenAPI specification, Swagger UI, and ReDoc explicitly in `config/application.toml`. This is a temporary workaround because the development server's default documentation routes return `404` alongside the application's `/**` static-resource mapping. Tracking this issue in [Pyronaut issue #434](https://github.com/micronaut-projects/pyronaut/issues/434)
 
 ## Package
-
-In the Pyronaut 0.1.1 artifacts tested here, the Python application code is packaged inside the JAR, native executable, and Crema wheel in GraalPy's virtual filesystem. However, the `vaderSentiment` library is not packaged in those artifacts; GraalPy loads it from the project's `.venv` on disk. When you launch an artifact, `VIRTUAL_ENV` must point to this project's `.venv`. If it is unset or points elsewhere, the server starts, but the requests to `/api/reviews/analyze` fail with `ModuleNotFoundError: No module named 'vaderSentiment'`.
-
-Track this packaging question in [Pyronaut issue #430](https://github.com/micronaut-projects/pyronaut/issues/430).
 
 ### Tested formats
 
@@ -93,10 +106,15 @@ source ~/.venvs/pyronaut-cli/bin/activate
 
 ```bash
 pyronaut build --jar
-VIRTUAL_ENV="$PWD/.venv" java -jar dist/pyronaut-vader-1.0.0.jar
+java -jar dist/pyronaut-vader-1.0.0.jar
 ```
 
 ##### `wheel-crema`
+
+Note: In the Pyronaut 0.1.2 artifacts tested here, the Python application code in GraalPy's virtual filesystem is packaged inside the Crema binary. However, the `vaderSentiment` package and other packages are not packaged in the Crema binary; GraalPy loads it from the project's `.venv` on disk. When you launch an artifact, `VIRTUAL_ENV` must point to this project's `.venv`. If it is unset or points elsewhere, the server starts, but the requests to `/api/reviews/analyze` fail with `ModuleNotFoundError: No module named 'vaderSentiment'`.
+
+Track this packaging question in [Pyronaut issue #430](https://github.com/micronaut-projects/pyronaut/issues/430).
+
 
 Build the wheel, then run the staged binary:
 
@@ -118,7 +136,7 @@ VIRTUAL_ENV="$PWD/.venv" pyronaut-vader
 
 ```bash
 pyronaut build --native
-VIRTUAL_ENV="$PWD/.venv" ./__pyronaut__/native/pyronaut-vader
+./__pyronaut__/native/pyronaut-vader
 ```
 
 The build completed in 16 minutes 38 seconds. The native image build took 16 minutes 14 seconds and produced a 600.7 MB executable. Native-image reported 24 GiB of build memory (75% of the system's 32 GiB) and 10 threads (all 10 available processors).
@@ -162,7 +180,7 @@ pyronaut-vader
 ./__pyronaut__/native/pyronaut-vader
 ```
 
-The native build took 13 minutes and 13 seconds. Native-image reported 24 GiB of build memory (75% of the system's 32 GiB) and 10 threads (all 10 available processors). Pyronaut staged the executable at `__pyronaut__/native/pyronaut-vader` and created the wheel `dist/pyronaut_vader-1.0.0-graalpy313-graalpy253_313_native-macosx_26_0_arm64.whl`.
+The native build took 18 minutes and 3 seconds. Native-image reported 24.96 GiB of build memory (78% of the system's 32 GiB) and 10 threads (100% of all 10 available processors). Pyronaut staged the executable at `__pyronaut__/native/pyronaut-vader` and created the wheel `dist/pyronaut_vader-1.0.0-py3-none-macosx_26_0_arm64.whl`.
 
 ### Not tested
 
