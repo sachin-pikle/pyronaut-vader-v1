@@ -25,11 +25,12 @@ This project declares Micronaut's Netty server module. Netty handles the HTTP co
 The Pyronaut CLI requires Python 3.10 or later. Install it in a separate virtual environment and provision its SDK:
 
 ```bash
+sdk use java 25.4.4+1-graal
 python3 -m venv ~/.venvs/pyronaut-cli
 source ~/.venvs/pyronaut-cli/bin/activate
-python -m pip install --upgrade pip
-python -m pip install "pyronaut==0.1.1"
-pyronaut setup
+python3 -m pip install --upgrade pip
+python3 -m pip install --upgrade 'pyronaut==0.1.1'
+pyronaut setup --refresh
 ```
 
 The activated `pyronaut-cli` environment is for the CLI. From the project directory, run `pyronaut install`; it creates the project's `.venv` with GraalPy and installs `vaderSentiment`. You don't need to activate the project environment for `pyronaut run`, `dev`, or `test`; they use it automatically.

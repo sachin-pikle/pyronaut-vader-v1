@@ -4,6 +4,25 @@
 [micronaut.application]
 name = 'pyronaut-vader'
 
+# Temporary workaround: expose the generated OpenAPI specification,
+# Swagger UI, and ReDoc explicitly. Remove these mappings when
+# `pyronaut dev` serves its default documentation routes correctly
+# alongside the application's /** static-resource mapping.
+
+[micronaut.router.static-resources.swagger]
+mapping = "/swagger/**"
+paths = ["classpath:META-INF/swagger"]
+
+[micronaut.router.static-resources.swagger-ui]
+mapping = "/swagger-ui/**"
+paths = ["classpath:META-INF/swagger/views/swagger-ui"]
+
+[micronaut.router.static-resources.redoc]
+mapping = "/redoc/**"
+paths = ["classpath:META-INF/swagger/views/redoc"]
+
+# End temporary workaround.
+
 [micronaut.router.static-resources.default]
 enabled = true
 mapping = "/**"
