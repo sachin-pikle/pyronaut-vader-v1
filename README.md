@@ -73,6 +73,8 @@ curl -i -X POST http://localhost:8080/api/reviews/analyze \
 
 Pyronaut generates the OpenAPI description during processing. `pyronaut dev` runs processing before starting the app. While it is running, open [Swagger UI](http://localhost:8080/swagger-ui/index.html) or [ReDoc](http://localhost:8080/redoc/index.html) to explore and call the endpoint.
 
+This application maps the generated OpenAPI specification, Swagger UI, and ReDoc explicitly in `config/application.toml`. This is a temporary workaround because the development server's default documentation routes return `404` alongside the application's `/**` static-resource mapping.
+
 ## Package
 
 In the Pyronaut 0.1.1 artifacts tested here, the Python application code is packaged inside the JAR, native executable, and Crema wheel in GraalPy's virtual filesystem. However, the `vaderSentiment` library is not packaged in those artifacts; GraalPy loads it from the project's `.venv` on disk. When you launch an artifact, `VIRTUAL_ENV` must point to this project's `.venv`. If it is unset or points elsewhere, the server starts, but the requests to `/api/reviews/analyze` fail with `ModuleNotFoundError: No module named 'vaderSentiment'`.
