@@ -85,3 +85,6 @@ test = [
     "io.micronaut.pyronaut:micronaut-pyronaut-requests",
     "io.micronaut:micronaut-http-client",
 ]
+
+[tool.pyronaut.build.docker]
+image-name = "pyronaut-vader"

@@ -102,6 +102,71 @@ This application maps the generated OpenAPI specification, Swagger UI, and ReDoc
 source ~/.venvs/pyronaut-cli/bin/activate
 ```
 
+##### `docker-jvm`
+
+Set `image-name` under `[tool.pyronaut.build.docker]` in `pyproject.toml`:
+
+```toml
+[tool.pyronaut.build.docker]
+image-name = "pyronaut-vader"
+```
+
+A Docker-compatible engine, such as Docker Desktop or Rancher Desktop, must be installed and running. Podman requires Docker compatibility to be configured. Verify that the `docker` CLI can reach the engine:
+
+```bash
+docker version
+sdk use java 25.4.4+1-graal
+```
+
+Build the JVM container image:
+
+```bash
+pyronaut build --jvm --docker
+docker image ls pyronaut-vader
+```
+
+The image is tagged `pyronaut-vader:1.0.0`. Run it in the foreground:
+
+```bash
+docker run --rm \
+  --name pyronaut-vader \
+  -p 8080:8080 \
+  pyronaut-vader:1.0.0
+```
+
+In another terminal, test the API:
+
+```bash
+curl -i -X POST http://localhost:8080/api/reviews/analyze \
+  -H 'Content-Type: application/json' \
+  -d '{"text":"This coffee grinder is fantastic."}'
+```
+
+Blank review text should return `400 Bad Request`:
+
+```bash
+curl -i -X POST http://localhost:8080/api/reviews/analyze \
+  -H 'Content-Type: application/json' \
+  -d '{"text":""}'
+```
+
+Check the generated API documentation:
+
+```bash
+curl -sS -o /dev/null -w 'Swagger UI: %{http_code}\n' \
+  http://localhost:8080/swagger-ui/index.html
+
+curl -sS -o /dev/null -w 'Swagger spec: %{http_code}\n' \
+  http://localhost:8080/swagger/service-1.0.0.yml
+
+curl -sS -o /dev/null -w 'ReDoc: %{http_code}\n' \
+  http://localhost:8080/redoc/index.html
+```
+
+Open [Swagger UI](http://localhost:8080/swagger-ui/index.html) or [ReDoc](http://localhost:8080/redoc/index.html) in a browser. Stop the container with `Ctrl+C`.
+
+Pyronaut 0.1.2 installs the declared Python dependencies in the generated Docker image. The container does not use the project's host `.venv`.
+
 ##### `fat-jar`
 
 ```bash
@@ -187,11 +252,8 @@ The native build took 18 minutes and 3 seconds. Native-image reported 24.96 GiB 
 | Format | Build command |
 | --- | --- |
 | `wheel-jvm` | `~/.venvs/pyronaut-cli/bin/pyronaut build --jvm` |
-| `docker-jvm` | `~/.venvs/pyronaut-cli/bin/pyronaut build --jvm --docker` |
 | `docker-native` | `~/.venvs/pyronaut-cli/bin/pyronaut build --native --docker` |
 | `docker-crema` | `~/.venvs/pyronaut-cli/bin/pyronaut build --native-base --docker` |
-
-For `docker-jvm`, set `image-name` under `[tool.pyronaut.build.docker]` in `pyproject.toml`. Docker formats require Docker.
 
 ## Clean start
 
