@@ -50,7 +50,7 @@ pyronaut setup --refresh
 
 `pyronaut setup` prepares the shared GraalVM/GraalPy SDKs and CLI build tools.
 
-From the project directory, `pyronaut install` creates the project's GraalPy `.venv`, installs Python dependencies, resolves build, runtime, development-runtime, and test dependencies, and generates the application schema and Python editor stubs. `pyronaut run`, `dev`, and `test` use that environment automatically.
+The project's Python dependency is pinned in `requirements.txt`. From the project directory, `pyronaut install` creates the project's GraalPy `.venv`, installs Python dependencies, resolves build, runtime, development-runtime, and test dependencies, and generates the application schema and Python editor stubs. `pyronaut run`, `dev`, and `test` use that environment automatically.
 
 Install dependencies, run the tests, and start the development server:
 

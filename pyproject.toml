@@ -4,9 +4,6 @@
 [project]
 name = "pyronaut-vader"
 version = "1.0.0"
-dependencies = [
-    "vaderSentiment==3.3.2",
-]
 dynamic = [
     "scripts",
 ]
