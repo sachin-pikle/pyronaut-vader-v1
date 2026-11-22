@@ -105,7 +105,7 @@ curl http://localhost:8080/api/reviews/history | jq
 
 Pyronaut generates the OpenAPI description during processing. `pyronaut dev` runs processing before starting the app. While it is running, open [Swagger UI](http://localhost:8080/swagger-ui/index.html) or [ReDoc](http://localhost:8080/redoc/index.html) to explore and call the endpoint.
 
-This application maps the generated OpenAPI specification, Swagger UI, and ReDoc explicitly in `config/application.toml`. This is a temporary workaround because the development server's default documentation routes return `404` alongside the application's `/**` static-resource mapping. Tracking this issue in [Pyronaut issue #434](https://github.com/micronaut-projects/pyronaut/issues/434)
+This project exposes the generated OpenAPI specification, Swagger UI, and ReDoc through static-resource mappings in `config/application.toml`. Pyronaut configures these mappings automatically for direct single-file applications, but not for projects.
 
 ## Package
 
