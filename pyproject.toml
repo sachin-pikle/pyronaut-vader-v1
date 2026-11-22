@@ -65,18 +65,25 @@ packages = [
 enabled = true
 
 [tool.pyronaut.test-resources]
-enabled = false
-infer-classpath = false
+enabled = true
+infer-classpath = true
+additional-modules = [
+    "jdbc-oracle-free",
+]
 
 [tool.pyronaut.dependencies]
 runtime = [
     "io.micronaut.pyronaut:micronaut-pyronaut-logback",
+    "io.micronaut.data:micronaut-data-jdbc",
+    "io.micronaut.sql:micronaut-jdbc-hikari",
     "io.micronaut.serde:micronaut-serde-jackson",
     "io.micronaut.validation:micronaut-validation",
     "io.micronaut:micronaut-http-server-netty",
+    "com.oracle.database.jdbc:ojdbc11",
     "jakarta.validation:jakarta.validation-api",
 ]
 build = [
+    "io.micronaut.data:micronaut-data-processor",
     "io.micronaut.serde:micronaut-serde-processor",
     "io.micronaut:micronaut-http-validation",
 ]

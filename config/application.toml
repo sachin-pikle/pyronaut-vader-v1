@@ -4,6 +4,10 @@
 [micronaut.application]
 name = 'pyronaut-vader'
 
+[datasources.default]
+db-type = "oracle"
+dialect = "ORACLE"
+
 # Temporary workaround: expose the generated OpenAPI specification,
 # Swagger UI, and ReDoc explicitly. Remove these mappings when
 # `pyronaut dev` serves its default documentation routes correctly

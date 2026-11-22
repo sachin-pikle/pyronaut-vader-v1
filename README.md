@@ -1,6 +1,6 @@
 # Pyronaut VADER v1
 
-A small Pyronaut application that analyzes product reviews with VADER. The browser page lets you select a review file and see the result.
+A small Pyronaut application that analyzes product reviews with VADER and stores the results in Oracle Database Free. The browser page lets you select a review file and see the result.
 
 ## Versions
 
@@ -24,6 +24,8 @@ Browser reads review file
   → Python controller
   → Python sentiment service
   → VADER
+  → Micronaut Data repository
+  → Oracle Database Free
   → JSON result shown in browser
 ```
 
@@ -31,9 +33,13 @@ The analysis runs locally. The demo does not send review text to a hosted AI ser
 
 This project declares Micronaut's Netty server module. Netty handles the HTTP connections; Micronaut provides routing and dispatches the request to the Python controller.
 
+Micronaut Data implements the repository during Pyronaut processing. During development and testing, Micronaut Test Resources starts Oracle Database Free in a container and supplies the datasource configuration. The `dev` and `test` environments recreate the demo table, so this history is temporary.
+
 ## Run
 
-The Pyronaut CLI requires Python 3.10 or later. Install it in a separate virtual environment and provision its SDK:
+The Pyronaut CLI requires Python 3.10 or later. A Docker-compatible engine, such as Docker Desktop or Rancher Desktop, must also be installed and running so Test Resources can start Oracle Database Free. Podman requires Docker compatibility to be configured.
+
+Install the CLI in a separate virtual environment and provision its SDK:
 
 ```bash
 sdk use java 25.4.4+1-graal
@@ -55,10 +61,13 @@ From the project directory, `pyronaut install` creates the project's GraalPy `.v
 Install dependencies, run the tests, and start the development server:
 
 ```bash
+sdk use java 25.4.4+1-graal
 pyronaut install
 pyronaut test
 pyronaut dev
 ```
+
+The first `test` or `dev` run may take longer while the Oracle Database Free image is downloaded. If that initial download exceeds the startup timeout, run the command again after the download finishes. Test Resources stops its container when the command ends.
 
 Open [http://localhost:8080](http://localhost:8080), choose a file under `samples/`, and select **Run VADER in Pyronaut**. Press `Ctrl+C` in the terminal to stop the server.
 
@@ -86,6 +95,12 @@ curl -i -X POST http://localhost:8080/api/reviews/analyze \
   -d '{"text":""}'
 ```
 
+Each successful analysis is stored without changing the response from `/api/reviews/analyze`. List the saved analyses with:
+
+```bash
+curl http://localhost:8080/api/reviews/history | jq
+```
+
 ## API documentation
 
 Pyronaut generates the OpenAPI description during processing. `pyronaut dev` runs processing before starting the app. While it is running, open [Swagger UI](http://localhost:8080/swagger-ui/index.html) or [ReDoc](http://localhost:8080/redoc/index.html) to explore and call the endpoint.
@@ -94,15 +109,27 @@ This application maps the generated OpenAPI specification, Swagger UI, and ReDoc
 
 ## Package
 
-### Tested formats
+Database persistence does not change the available packaging formats. During `pyronaut dev` and `pyronaut test`, Micronaut Test Resources starts a temporary Oracle Database Free container and supplies its connection settings. Packaged applications need the URL and credentials of an accessible Oracle database at runtime.
 
-#### Path 1: Keep the CLI environment active
+### Summary
+
+The status below records whether the current application has been tested end-to-end with Oracle.
+
+| Format | Build command | Tested with Oracle |
+| --- | --- | --- |
+| `docker-jvm` | `pyronaut build --jvm --docker` | Yes |
+| `fat-jar` | `pyronaut build --jar` | Yes |
+| `wheel-crema` | `pyronaut build --native-base` | Yes |
+| `wheel-jvm` | `pyronaut build --jvm` | No |
+| `wheel-native` | `pyronaut build --native` | No |
+| `docker-native` | `pyronaut build --native --docker` | No |
+| `docker-crema` | `pyronaut build --native-base --docker` | No |
+
+### `docker-jvm`
 
 ```bash
 source ~/.venvs/pyronaut-cli/bin/activate
 ```
-
-##### `docker-jvm`
 
 Set `image-name` under `[tool.pyronaut.build.docker]` in `pyproject.toml`:
 
@@ -122,17 +149,57 @@ Build the JVM container image:
 
 ```bash
 pyronaut build --jvm --docker
+```
+
+The generated image includes the declared Python dependencies and does not use the project's host `.venv`.
+
+Confirm that the image was created:
+
+```bash
 docker image ls pyronaut-vader
 ```
 
-The image is tagged `pyronaut-vader:1.0.0`. Run it in the foreground:
+The image is tagged `pyronaut-vader:1.0.0`.
+
+Create a network for the application and database:
+
+```bash
+docker network create pyronaut-vader-network
+```
+
+Start Oracle Database Free on that network:
+
+```bash
+docker run -d \
+  --name pyronaut-vader-db \
+  --network pyronaut-vader-network \
+  -e ORACLE_PASSWORD=OracleDemo123 \
+  -e APP_USER=vader \
+  -e APP_USER_PASSWORD=VaderDemo123 \
+  gvenzl/oracle-free:slim-faststart
+```
+
+Follow the database log until you see `DATABASE IS READY TO USE!`. Press `Ctrl+C` to stop following the log; the database container will continue running.
+
+```bash
+docker logs -f pyronaut-vader-db
+```
+
+Run the application in the foreground and pass the datasource configuration:
 
 ```bash
 docker run --rm \
   --name pyronaut-vader \
+  --network pyronaut-vader-network \
   -p 8080:8080 \
+  -e DATASOURCES_DEFAULT_URL='jdbc:oracle:thin:@//pyronaut-vader-db:1521/FREEPDB1' \
+  -e DATASOURCES_DEFAULT_USERNAME=vader \
+  -e DATASOURCES_DEFAULT_PASSWORD=VaderDemo123 \
+  -e DATASOURCES_DEFAULT_SCHEMA_GENERATE=CREATE_DROP \
   pyronaut-vader:1.0.0
 ```
+
+`CREATE_DROP` is used only for this temporary demo. A production deployment should manage the schema with a migration tool such as Flyway or Liquibase.
 
 In another terminal, test the API:
 
@@ -142,39 +209,87 @@ curl -i -X POST http://localhost:8080/api/reviews/analyze \
   -d '{"text":"This coffee grinder is fantastic."}'
 ```
 
-Blank review text should return `400 Bad Request`:
+Analyze a negative review:
 
 ```bash
 curl -i -X POST http://localhost:8080/api/reviews/analyze \
   -H 'Content-Type: application/json' \
-  -d '{"text":""}'
+  -d '{"text":"This robot vacuum is terrible and completely useless."}'
 ```
 
-Check the generated API documentation:
+Show both saved analyses:
 
 ```bash
-curl -sS -o /dev/null -w 'Swagger UI: %{http_code}\n' \
-  http://localhost:8080/swagger-ui/index.html
-
-curl -sS -o /dev/null -w 'Swagger spec: %{http_code}\n' \
-  http://localhost:8080/swagger/service-1.0.0.yml
-
-curl -sS -o /dev/null -w 'ReDoc: %{http_code}\n' \
-  http://localhost:8080/redoc/index.html
+curl -s http://localhost:8080/api/reviews/history | jq
 ```
 
-Open [Swagger UI](http://localhost:8080/swagger-ui/index.html) or [ReDoc](http://localhost:8080/redoc/index.html) in a browser. Stop the container with `Ctrl+C`.
+Stop the application with `Ctrl+C`, then remove the temporary database and network:
 
-Pyronaut 0.1.2 installs the declared Python dependencies in the generated Docker image. The container does not use the project's host `.venv`.
+```bash
+docker stop pyronaut-vader-db
+docker rm pyronaut-vader-db
+docker network rm pyronaut-vader-network
+```
 
-##### `fat-jar`
+### Host-run formats
+
+#### Prepare Oracle
+
+The JAR, Crema wheel, and native wheel run on the host rather than inside Docker. Start a separate Oracle container and publish its database port:
+
+```bash
+docker run -d \
+  --name pyronaut-vader-db-host \
+  -p 1521:1521 \
+  -e ORACLE_PASSWORD=OracleDemo123 \
+  -e APP_USER=vader \
+  -e APP_USER_PASSWORD=VaderDemo123 \
+  gvenzl/oracle-free:slim-faststart
+```
+
+Follow the log until you see `DATABASE IS READY TO USE!`, then press `Ctrl+C`:
+
+```bash
+docker logs -f pyronaut-vader-db-host
+```
+
+Export the datasource configuration in the terminal that will run the application:
+
+```bash
+export DATASOURCES_DEFAULT_URL='jdbc:oracle:thin:@//localhost:1521/FREEPDB1'
+export DATASOURCES_DEFAULT_USERNAME=vader
+export DATASOURCES_DEFAULT_PASSWORD=VaderDemo123
+export DATASOURCES_DEFAULT_SCHEMA_GENERATE=CREATE_DROP
+```
+
+Use the same Oracle container and environment variables for each host-run format below. Run only one application at a time and stop it with `Ctrl+C`.
+
+Before starting the next format, remove the table created by the previous application:
+
+```bash
+docker exec pyronaut-vader-db-host bash -lc \
+  'printf "DROP TABLE sentiment_analysis PURGE;\nDROP SEQUENCE sentiment_analysis_seq;\nEXIT;\n" |
+   sqlplus -s "$APP_USER/$APP_USER_PASSWORD@//localhost:1521/FREEPDB1"'
+```
+
+Micronaut Data creates both objects for the entity. Removing both prevents `ORA-00955: name is already used by an existing object` when the next application processes `CREATE_DROP`.
+
+#### Path 1: CLI environment
+
+```bash
+source ~/.venvs/pyronaut-cli/bin/activate
+```
+
+**`fat-jar`**
 
 ```bash
 pyronaut build --jar
 java -jar dist/pyronaut-vader-1.0.0.jar
 ```
 
-##### `wheel-crema`
+The JAR includes the declared Python dependencies and does not use the project's host `.venv`.
+
+**`wheel-crema`**
 
 Note: In the Pyronaut 0.1.2 artifacts tested here, the Python application code in GraalPy's virtual filesystem is packaged inside the Crema binary. However, the `vaderSentiment` package and other packages are not packaged in the Crema binary; GraalPy loads it from the project's `.venv` on disk. When you launch an artifact, `VIRTUAL_ENV` must point to this project's `.venv`. If it is unset or points elsewhere, the server starts, but the requests to `/api/reviews/analyze` fail with `ModuleNotFoundError: No module named 'vaderSentiment'`.
 
@@ -197,30 +312,23 @@ python -m pip install dist/*.whl
 VIRTUAL_ENV="$PWD/.venv" pyronaut-vader
 ```
 
-##### `wheel-native`
+#### Path 2: Project environment
 
-```bash
-pyronaut build --native
-./__pyronaut__/native/pyronaut-vader
-```
-
-The build completed in 16 minutes 38 seconds. The native image build took 16 minutes 14 seconds and produced a 600.7 MB executable. Native-image reported 24 GiB of build memory (75% of the system's 32 GiB) and 10 threads (all 10 available processors).
-
-#### Path 2: Switch to the project environment
+Start Oracle and export the datasource configuration as described under **Prepare Oracle** above.
 
 ```bash
 deactivate
 source .venv/bin/activate
 ```
 
-##### `fat-jar`
+**`fat-jar`**
 
 ```bash
 ~/.venvs/pyronaut-cli/bin/pyronaut build --jar
 java -jar dist/pyronaut-vader-1.0.0.jar
 ```
 
-##### `wheel-crema`
+**`wheel-crema`**
 
 Build the wheel, then run the staged binary:
 
@@ -238,24 +346,33 @@ python -m pip install dist/*.whl
 pyronaut-vader
 ```
 
-##### `wheel-native`
+For each format, analyze a review and read the saved row:
 
 ```bash
-~/.venvs/pyronaut-cli/bin/pyronaut build --native
-./__pyronaut__/native/pyronaut-vader
+curl -X POST http://localhost:8080/api/reviews/analyze \
+  -H 'Content-Type: application/json' \
+  -d '{"text":"This coffee grinder is fantastic."}'
+
+curl -s http://localhost:8080/api/reviews/history | jq
 ```
 
-The native build took 18 minutes and 3 seconds. Native-image reported 24.96 GiB of build memory (78% of the system's 32 GiB) and 10 threads (100% of all 10 available processors). Pyronaut staged the executable at `__pyronaut__/native/pyronaut-vader` and created the wheel `dist/pyronaut_vader-1.0.0-py3-none-macosx_26_0_arm64.whl`.
+#### Clean up host-run tests
 
-### Not tested
+After testing one or more host-run formats, clear the datasource variables and remove the temporary database:
 
-| Format | Build command |
-| --- | --- |
-| `wheel-jvm` | `~/.venvs/pyronaut-cli/bin/pyronaut build --jvm` |
-| `docker-native` | `~/.venvs/pyronaut-cli/bin/pyronaut build --native --docker` |
-| `docker-crema` | `~/.venvs/pyronaut-cli/bin/pyronaut build --native-base --docker` |
+```bash
+unset DATASOURCES_DEFAULT_URL
+unset DATASOURCES_DEFAULT_USERNAME
+unset DATASOURCES_DEFAULT_PASSWORD
+unset DATASOURCES_DEFAULT_SCHEMA_GENERATE
+
+docker stop pyronaut-vader-db-host
+docker rm pyronaut-vader-db-host
+```
 
 ## Clean start
+
+This resets the project's generated Pyronaut state. Clean up any package-test database containers using the commands in the Package section first.
 
 Stop the running application with `Ctrl+C`. If the project's `.venv` is active, run `deactivate` first. From the project directory, activate the CLI environment:
 
@@ -278,5 +395,6 @@ rm -r dist
 Recreate the project environment and resolve dependencies:
 
 ```bash
+sdk use java 25.4.4+1-graal
 pyronaut install
 ```
