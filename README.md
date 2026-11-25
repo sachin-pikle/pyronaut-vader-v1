@@ -2,6 +2,8 @@
 
 A small Pyronaut application that analyzes product reviews with VADER and stores the results in Oracle Database Free. The browser page lets you select a review file and see the result.
 
+> **Note:** This demo was used in the Practical Python AI on the JVM with GraalPy and Pyronaut session at WeAreDevelopers Conference India. See the [conference talk entry](https://github.com/sachin-pikle/conference-talks/tree/main#2026-wearedevelopers-conference-india) for the presentation and video details.
+
 ## Versions
 
 - Pyronaut CLI: 0.1.2
